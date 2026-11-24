@@ -1,0 +1,117 @@
+// Skema database eduTech CBT.
+// Default: SQLite (file prisma/dev.db). Untuk pindah ke PostgreSQL/Supabase:
+//   1. ganti provider di bawah menjadi "postgresql"
+//   2. isi DATABASE_URL di .env dengan connection string PostgreSQL
+//   3. hapus folder prisma/migrations lalu jalankan: npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Exam {
+  id               String     @id @default(cuid())
+  title            String
+  level            String     @default("")
+  description      String     @default("")
+  durationMinutes  Int        @default(60)
+  passingScore     Int        @default(70)
+  /// Acak urutan soal untuk setiap peserta
+  shuffleQuestions Boolean    @default(true)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  questions        Question[]
+  attempts         Attempt[]
+}
+
+model Question {
+  id          String          @id @default(cuid())
+  examId      String
+  exam        Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+  position    Int
+  section     String
+  text        String
+  /// Kunci jawaban: ア / イ / ウ / エ
+  answer      String
+  explanation String?
+  choices     Choice[]
+  answers     AttemptAnswer[]
+
+  @@index([examId, position])
+}
+
+model Choice {
+  id         String   @id @default(cuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  /// ア / イ / ウ / エ
+  key        String
+  position   Int
+  text       String
+
+  @@unique([questionId, key])
+}
+
+model User {
+  id           String    @id @default(cuid())
+  username     String    @unique
+  name         String
+  passwordHash String
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  sessions     Session[]
+  attempts     Attempt[]
+}
+
+model Session {
+  token     String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// Satu percobaan ujian oleh satu peserta (maksimal 1 per ujian).
+model Attempt {
+  id            String          @id @default(cuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  examId        String
+  exam          Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+  startedAt     DateTime        @default(now())
+  /// Batas waktu dari server. Sumber kebenaran sisa waktu.
+  deadline      DateTime
+  current       Int             @default(0)
+  /// Urutan soal untuk peserta ini (JSON array berisi id soal)
+  questionOrder String          @default("[]")
+  submittedAt   DateTime?
+  /// "manual" | "timeout"
+  submitReason  String?
+  correct       Int?
+  total         Int?
+  score         Int?
+  answers       AttemptAnswer[]
+
+  @@unique([userId, examId])
+  @@index([examId])
+}
+
+/// Jawaban & flag per soal dalam satu percobaan.
+model AttemptAnswer {
+  attemptId  String
+  attempt    Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  /// ア / イ / ウ / エ, null jika belum dijawab
+  choice     String?
+  flagged    Boolean  @default(false)
+  updatedAt  DateTime @updatedAt
+
+  @@id([attemptId, questionId])
+}

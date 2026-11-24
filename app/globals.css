@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #f2f6ea;
+  --color-brand-100: #e1ebcf;
+  --color-brand-500: #6f9a35;
+  --color-brand-600: #5d852b;
+  --color-brand-700: #4a6b22;
+  --color-brand-800: #3a541b;
+  --color-accent-200: #f6e2a6;
+  --color-accent-400: #efbb3c;
+  --color-ink: #1f2a33;
+  --font-sans: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", Meiryo, system-ui,
+    sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: #ffffff;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Furigana */
+ruby {
+  ruby-position: over;
+}
+rt {
+  font-size: 0.5em;
+  color: #4b5563;
+  letter-spacing: 0.02em;
+}
+.hide-furigana rt {
+  visibility: hidden;
+}
+
+/* Skala huruf dari pengaturan */
+.font-scale-normal {
+  --q-size: 1.125rem;
+}
+.font-scale-large {
+  --q-size: 1.3rem;
+}
+.font-scale-xlarge {
+  --q-size: 1.55rem;
+}
+.q-text {
+  font-size: var(--q-size);
+  line-height: 2.3;
+}
+
+/* Bentuk panah untuk nomor soal aktif & tombol 戻る/次へ */
+.arrow-right {
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%);
+}
+.arrow-left {
+  clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
+}
+.arrow-right-lg {
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%);
+}
+
+/* Layar ujian: cegah seleksi teks, copy, dan menu tekan lama (iOS/Android) */
+.no-copy,
+.no-copy * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.no-copy img {
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+@media print {
+  .no-copy {
+    display: none !important;
+  }
+}
