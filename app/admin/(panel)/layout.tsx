@@ -22,6 +22,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/results" className="hover:text-white">
             Hasil
           </Link>
+          <Link href="/admin/progress" className="hover:text-white">
+            Perkembangan
+          </Link>
           <Link href="/" className="hover:text-white" target="_blank">
             Lihat situs ↗
           </Link>

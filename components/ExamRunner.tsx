@@ -276,21 +276,21 @@ export function ExamRunner({
       </div>
 
       {/* Bar bawah */}
-      <footer className="flex items-center gap-3 border-t-[6px] border-brand-600 bg-black px-3 py-3 sm:px-5">
+      <footer className="flex items-center gap-2 border-t-[6px] sm:gap-3 border-brand-600 bg-black px-3 py-3 sm:px-5">
         <button onClick={() => setModal("settings")} aria-label="設定" className="text-white hover:opacity-80">
-          <GearIcon className="h-9 w-9" />
+          <GearIcon className="h-8 w-8 sm:h-9 sm:w-9" />
         </button>
-        <span className="h-9 w-px bg-white/70" aria-hidden />
+        <span className="h-8 w-px bg-white/70 sm:h-9" aria-hidden />
         <button onClick={() => setModal("help")} aria-label="ヘルプ" className="text-white hover:opacity-80">
-          <HelpIcon className="h-9 w-9" />
+          <HelpIcon className="h-8 w-8 sm:h-9 sm:w-9" />
         </button>
 
-        <div className="ml-auto flex items-center gap-2 sm:gap-3">
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-3">
           <button
             onClick={toggleFlag}
             aria-pressed={flagged}
             aria-label="フラグ"
-            className={`flex h-12 w-14 items-center justify-center rounded-sm transition-colors ${
+            className={`flex h-12 w-11 items-center sm:w-14 justify-center rounded-sm transition-colors ${
               flagged ? "bg-accent-400 text-black" : "bg-brand-600 text-white hover:bg-brand-500"
             }`}
           >
@@ -299,21 +299,21 @@ export function ExamRunner({
           <button
             onClick={() => go(idx - 1)}
             disabled={idx === 0}
-            className="arrow-left h-12 w-28 bg-brand-600 pl-3 text-lg text-white hover:bg-brand-500 disabled:bg-gray-600 disabled:text-gray-400 sm:w-32"
+            className="arrow-left h-12 w-[5.5rem] bg-brand-600 pl-3 text-lg text-white hover:bg-brand-500 disabled:bg-gray-600 disabled:text-gray-400 sm:w-32"
           >
             戻る
           </button>
           {idx < total - 1 ? (
             <button
               onClick={() => go(idx + 1)}
-              className="arrow-right-lg h-12 w-28 bg-brand-600 pr-3 text-lg text-white hover:bg-brand-500 sm:w-32"
+              className="arrow-right-lg h-12 w-[5.5rem] bg-brand-600 pr-3 text-lg text-white hover:bg-brand-500 sm:w-32"
             >
               次へ
             </button>
           ) : (
             <button
               onClick={() => setModal("finish")}
-              className="arrow-right-lg h-12 w-28 bg-accent-400 pr-3 text-lg font-bold text-black hover:brightness-95 sm:w-32"
+              className="arrow-right-lg h-12 w-[5.5rem] bg-accent-400 pr-3 text-lg font-bold text-black hover:brightness-95 sm:w-32"
             >
               終了
             </button>

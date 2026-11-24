@@ -51,6 +51,8 @@ rt {
 .q-text {
   font-size: var(--q-size);
   line-height: 2.3;
+  /* baris baru di teks soal (daftar, tabel, diagram) tetap tampil */
+  white-space: pre-line;
 }
 
 /* Bentuk panah untuk nomor soal aktif & tombol 戻る/次へ */

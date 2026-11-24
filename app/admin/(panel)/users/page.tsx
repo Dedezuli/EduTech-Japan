@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { listUsers } from "@/lib/db";
 import { Card } from "@/components/admin/ui";
 import { ConfirmButton } from "@/components/admin/ConfirmButton";
@@ -40,6 +41,12 @@ export default async function UsersPage() {
                     </td>
                     <td className="py-3">
                       <div className="flex flex-wrap items-center justify-end gap-1">
+                        <Link
+                          href={`/admin/users/${u.id}/progress`}
+                          className="rounded px-2 py-1 text-sm text-brand-700 hover:bg-brand-50"
+                        >
+                          Perkembangan
+                        </Link>
                         <ResetPasswordForm id={u.id} />
                         <form action={toggleUserActive}>
                           <input type="hidden" name="id" value={u.id} />

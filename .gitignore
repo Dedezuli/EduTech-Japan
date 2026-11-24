@@ -9,3 +9,7 @@ storage/
 prisma/dev.db
 prisma/dev.db-journal
 .env
+
+# Materi & soal pihak ketiga (TAKUMI / JAVADA, 禁転載複製) — jangan dipublikasikan di repo publik
+materi/
+data/business-career/

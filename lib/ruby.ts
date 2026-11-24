@@ -24,3 +24,15 @@ export function stripRuby(input: string): string {
 export function stripQuestionNumber(text: string): string {
   return text.replace(/^\s*(\{問題\|[^}]*\}|問題)\s*[0-9０-９]+\s*[：:．.]\s*/, "");
 }
+
+/** Penanda pemisah pembahasan: teks sebelum baris "[ID]" = bahasa Jepang, sesudahnya = bahasa Indonesia. */
+export const EXPLANATION_ID_MARKER = "[ID]";
+
+/** Pisahkan pembahasan menjadi bagian Jepang dan Indonesia. */
+export function splitExplanation(input: string | undefined | null): { ja: string; id: string } {
+  if (!input) return { ja: "", id: "" };
+  const lines = input.split(/\r?\n/);
+  const at = lines.findIndex((l) => l.trim() === EXPLANATION_ID_MARKER);
+  if (at < 0) return { ja: input.trim(), id: "" };
+  return { ja: lines.slice(0, at).join("\n").trim(), id: lines.slice(at + 1).join("\n").trim() };
+}

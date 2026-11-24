@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
-import { getAttempt, getExam } from "@/lib/db";
+import { getAttempt, getExam, getResultForAttempt } from "@/lib/db";
+import { topicStats } from "@/lib/report";
 import { requireUser } from "@/lib/userAuth";
 import { ResultView } from "@/components/ResultView";
 
@@ -12,5 +13,14 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
   if (!exam) notFound();
   const attempt = await getAttempt(user.id, exam.id);
   if (!attempt?.submittedAt) redirect(`/exam/${exam.id}`);
-  return <ResultView exam={exam} attempt={attempt} userName={user.name} />;
+  const result = await getResultForAttempt(attempt.id);
+  return (
+    <ResultView
+      exam={exam}
+      attempt={attempt}
+      userName={user.name}
+      reportHref={result ? `/report/${result.id}` : undefined}
+      topics={result ? topicStats(result.detail) : undefined}
+    />
+  );
 }

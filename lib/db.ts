@@ -6,6 +6,7 @@ import { Prisma, PrismaClient } from "@prisma/client";
 import type { Attempt, ChoiceKey, Exam, PublicUser, Question } from "./types";
 import { CHOICE_KEYS } from "./validate";
 import { seedExams } from "@/data/seed";
+import { scoreOf, type ResultDetailItem, type ResultMode, type ResultRecord } from "./report";
 
 /**
  * Lapisan data. Semua halaman & action hanya memakai fungsi di file ini,
@@ -375,10 +376,140 @@ async function grade(tx: Tx, attemptId: string, examId: string) {
 /** Tandai selesai jika waktu sudah habis. */
 async function finalizeIfExpired(tx: Tx, a: { id: string; examId: string; deadline: Date; submittedAt: Date | null }) {
   if (a.submittedAt || Date.now() < a.deadline.getTime() + GRACE_MS) return;
-  await tx.attempt.update({
+  const done = await tx.attempt.update({
     where: { id: a.id },
     data: { submittedAt: a.deadline, submitReason: "timeout", ...(await grade(tx, a.id, a.examId)) },
   });
+  await logSimulasi(tx, done.id);
+}
+
+// ---------- Riwayat hasil (laporan trainer & perkembangan) ----------
+
+async function buildDetail(tx: Tx, examId: string, chosen: Map<string, string | null>) {
+  const questions = await tx.question.findMany({
+    where: { examId },
+    orderBy: { position: "asc" },
+    select: { id: true, answer: true, section: true },
+  });
+  const detail: ResultDetailItem[] = questions.map((q) => ({
+    questionId: q.id,
+    section: q.section,
+    answer: q.answer as ChoiceKey,
+    choice: (chosen.get(q.id) as ChoiceKey | null | undefined) ?? null,
+  }));
+  const correct = detail.filter((d) => d.choice === d.answer).length;
+  return { detail, correct, total: detail.length };
+}
+
+/** Simpan hasil simulasi yang sudah selesai ke riwayat (sekali per percobaan). */
+async function logSimulasi(tx: Tx, attemptId: string) {
+  const a = await tx.attempt.findUnique({
+    where: { id: attemptId },
+    include: { answers: true, exam: { select: { passingScore: true } } },
+  });
+  if (!a?.submittedAt) return;
+  const { detail, correct, total } = await buildDetail(
+    tx,
+    a.examId,
+    new Map(a.answers.map((r) => [r.questionId, r.choice])),
+  );
+  const score = scoreOf(correct, total);
+  const data = {
+    userId: a.userId,
+    examId: a.examId,
+    mode: "simulasi",
+    correct,
+    total,
+    score,
+    passed: score >= a.exam.passingScore,
+    detail: JSON.stringify(detail),
+    durationSec: Math.max(0, Math.round((a.submittedAt.getTime() - a.startedAt.getTime()) / 1000)),
+    createdAt: a.submittedAt,
+  };
+  await tx.resultLog.upsert({ where: { attemptId: a.id }, create: { ...data, attemptId: a.id }, update: data });
+}
+
+/** Simpan hasil latihan. Jawaban dinilai di server. */
+export async function savePracticeResult(
+  userId: string,
+  examId: string,
+  answers: Record<string, string | null>,
+  durationSec: number,
+): Promise<string> {
+  return prisma.$transaction(async (tx) => {
+    const exam = await tx.exam.findUnique({ where: { id: examId }, select: { passingScore: true } });
+    if (!exam) throw new Error("Ujian tidak ditemukan");
+    const keys = new Set<string>(CHOICE_KEYS);
+    const chosen = new Map(
+      Object.entries(answers).map(([k, v]) => [k, v && keys.has(v) ? v : null] as [string, string | null]),
+    );
+    const { detail, correct, total } = await buildDetail(tx, examId, chosen);
+    const score = scoreOf(correct, total);
+    const row = await tx.resultLog.create({
+      data: {
+        userId,
+        examId,
+        mode: "latihan",
+        correct,
+        total,
+        score,
+        passed: score >= exam.passingScore,
+        detail: JSON.stringify(detail),
+        durationSec: Math.max(0, Math.min(Math.round(durationSec), 60 * 60 * 24)),
+      },
+    });
+    return row.id;
+  });
+}
+
+type ResultRow = Prisma.ResultLogGetPayload<object>;
+
+function toResult(r: ResultRow): ResultRecord {
+  let detail: ResultDetailItem[] = [];
+  try {
+    const v = JSON.parse(r.detail);
+    if (Array.isArray(v)) detail = v;
+  } catch {
+    /* abaikan */
+  }
+  return {
+    id: r.id,
+    userId: r.userId,
+    examId: r.examId,
+    mode: r.mode === "latihan" ? "latihan" : "simulasi",
+    correct: r.correct,
+    total: r.total,
+    score: r.score,
+    passed: r.passed,
+    durationSec: r.durationSec,
+    createdAt: r.createdAt.getTime(),
+    detail,
+  };
+}
+
+export async function getResult(id: string): Promise<ResultRecord | undefined> {
+  const r = await prisma.resultLog.findUnique({ where: { id } });
+  return r ? toResult(r) : undefined;
+}
+
+/** Hasil simulasi untuk satu percobaan (dibuat jika belum ada, mis. percobaan lama). */
+export async function getResultForAttempt(attemptId: string): Promise<ResultRecord | undefined> {
+  let r = await prisma.resultLog.findUnique({ where: { attemptId } });
+  if (!r) {
+    await prisma.$transaction((tx) => logSimulasi(tx, attemptId));
+    r = await prisma.resultLog.findUnique({ where: { attemptId } });
+  }
+  return r ? toResult(r) : undefined;
+}
+
+export async function listResults(filter: { userId?: string; examId?: string; mode?: ResultMode } = {}) {
+  await ready();
+  if (filter.userId) await finalizeExpired({ userId: filter.userId });
+  const rows = await prisma.resultLog.findMany({
+    where: { userId: filter.userId, examId: filter.examId, mode: filter.mode },
+    orderBy: { createdAt: "asc" },
+  });
+  return rows.map(toResult);
 }
 
 async function findAttempt(tx: Tx, userId: string, examId: string) {
@@ -478,6 +609,7 @@ export async function submitAttempt(userId: string, examId: string): Promise<voi
         ...(await grade(tx, a.id, examId)),
       },
     });
+    await logSimulasi(tx, a.id);
   });
 }
 

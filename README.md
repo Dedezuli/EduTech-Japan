@@ -120,3 +120,29 @@ Paling mudah lewat `/admin`. Furigana ditulis dengan format `{漢字|かんじ}`
 - Deploy online dengan PostgreSQL/Supabase
 - Login peserta & akun admin multi-user
 - Acak urutan soal/pilihan, beberapa seksi per ujian, soal bergambar/audio
+
+## Paket latihan, simulasi & laporan trainer
+
+- Halaman depan mengelompokkan paket per level (satu "folder" per level). Tiap paket punya dua mode:
+  - **Latihan** (`/practice/[id]`): tanpa batas waktu, setelah memilih jawaban langsung tampil benar/salah,
+    kunci, dan pembahasan (bahasa Jepang dengan furigana + bahasa Indonesia). Bisa diulang.
+  - **Simulasi Ujian** (`/exam/[id]`): seperti ujian asli, ada waktu, hanya 1 kali (admin bisa reset).
+- Setiap hasil latihan/simulasi tersimpan di tabel `ResultLog` (tetap ada walau percobaan di-reset).
+- **Laporan untuk trainer** (`/report/[id]`): identitas, nilai, 合格/不合格 (batas lulus per paket, default 60),
+  % pemahaman per materi, lalu setiap soal dengan jawaban peserta, kunci, dan pembahasan. Tombol
+  "Cetak / Simpan PDF" untuk dikirim ke trainer.
+- **Perkembangan**: peserta di `/progress`, trainer di Admin → **Perkembangan** (semua peserta) dan
+  Admin → Peserta → **Perkembangan** (detail per peserta: % per materi dari hasil ke hasil).
+- Materi (seksi) soal dipakai sebagai topik penilaian, mis. `{作業管理|さぎょうかんり}`.
+- Pembahasan: teks Jepang, lalu baris `[ID]`, lalu teks Indonesia.
+
+### Import paket soal
+
+Soal paket disimpan di `data/business-career/*.json` (tidak ikut di-commit karena berisi materi pihak ketiga).
+
+```bash
+node scripts/import-business-career.mjs            # tambah paket baru
+node scripts/import-business-career.mjs --replace  # perbarui isi soal, riwayat peserta tetap
+```
+
+Setelah menarik versi baru, jalankan `npx prisma migrate deploy` (otomatis lewat `npm run dev`).

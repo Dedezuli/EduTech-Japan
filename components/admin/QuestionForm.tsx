@@ -5,6 +5,7 @@ import { startTransition, useActionState, useState } from "react";
 import { saveQuestion, type FormState } from "@/app/admin/actions";
 import type { ChoiceKey, Question } from "@/lib/types";
 import { CHOICE_KEYS } from "@/lib/validate";
+import { Explanation } from "@/components/Explanation";
 import { Ruby } from "../Ruby";
 import { stripQuestionNumber } from "@/lib/ruby";
 import { Errors, Field, btnGhost, btnPrimary, inputCls, keepValues } from "./ui";
@@ -100,9 +101,12 @@ export function QuestionForm({
             name="explanation"
             value={explanation}
             onChange={(e) => setExplanation(e.target.value)}
-            rows={2}
+            rows={4}
             className={inputCls}
           />
+          <p className="mt-1 text-xs text-gray-500">
+            Bahasa Jepang dulu (furigana {"{漢字|かんじ}"}), lalu satu baris <b>[ID]</b>, lalu pembahasan bahasa Indonesia.
+          </p>
         </Field>
 
         <Errors errors={state.errors} />
@@ -130,7 +134,7 @@ export function QuestionForm({
             設問：{number}　セクション：{section.replace(/\{([^|{}]+)\|[^{}]+\}/g, "$1")}
           </div>
           <div className="space-y-3 p-3">
-            <div className="rounded-sm bg-gray-100 px-3 py-2 text-[17px] leading-[2.3]">
+            <div className="rounded-sm bg-gray-100 px-3 py-2 text-[17px] leading-[2.3] whitespace-pre-line">
               {`問題${number}：`}
               <Ruby text={stripQuestionNumber(text)} />
             </div>
@@ -145,9 +149,7 @@ export function QuestionForm({
               </div>
             ))}
             {explanation && (
-              <div className="rounded bg-brand-50 px-3 py-1 text-sm leading-[2.2]">
-                解説：<Ruby text={explanation} />
-              </div>
+              <Explanation text={explanation} />
             )}
           </div>
         </div>

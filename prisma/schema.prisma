@@ -26,6 +26,7 @@ model Exam {
   updatedAt        DateTime   @updatedAt
   questions        Question[]
   attempts         Attempt[]
+  results          ResultLog[]
 }
 
 model Question {
@@ -65,6 +66,7 @@ model User {
   createdAt    DateTime  @default(now())
   sessions     Session[]
   attempts     Attempt[]
+  results      ResultLog[]
 }
 
 model Session {
@@ -114,4 +116,29 @@ model AttemptAnswer {
   updatedAt  DateTime @updatedAt
 
   @@id([attemptId, questionId])
+}
+
+/// Riwayat hasil (latihan & simulasi). Tetap tersimpan walau percobaan di-reset,
+/// dipakai untuk laporan trainer dan grafik perkembangan peserta.
+model ResultLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  examId      String
+  exam        Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  /// "latihan" | "simulasi"
+  mode        String
+  /// id Attempt untuk mode simulasi (null untuk latihan)
+  attemptId   String?  @unique
+  correct     Int
+  total       Int
+  score       Int
+  passed      Boolean
+  /// JSON: [{ questionId, choice, answer, section }]
+  detail      String
+  durationSec Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([examId])
 }
