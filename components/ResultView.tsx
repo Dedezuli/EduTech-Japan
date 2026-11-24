@@ -60,8 +60,8 @@ export function ResultView({
           <dl className="mt-6 grid grid-cols-3 gap-3 text-sm">
             <div className="rounded bg-gray-50 p-3">
               <dt className="text-gray-500">正解</dt>
-              <dd className="text-xl font-bold">
-                {correct} / {total}
+              <dd className="text-xl font-bold whitespace-nowrap">
+                {correct}/{total}
               </dd>
             </div>
             <div className="rounded bg-gray-50 p-3">
