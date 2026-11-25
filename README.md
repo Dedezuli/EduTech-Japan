@@ -1,6 +1,6 @@
-# eduTech CBT — Web App Ujian (Next.js)
+# eduTech CBT — Platform Ujian Bahasa Jepang
 
-Kerangka awal platform ujian CBT bergaya ujian sertifikasi Jepang:
+Platform ujian CBT (Next.js 16, React 19, Prisma, Tailwind 4) bergaya ujian sertifikasi Jepang:
 header dengan nomor soal, seksi, sisa waktu & tombol **終了**, daftar nomor soal di kiri,
 soal dengan **furigana**, pilihan **ア／イ／ウ／エ**, tombol **フラグ**, **戻る／次へ**, dan halaman hasil.
 
@@ -20,6 +20,7 @@ Login peserta (contoh): username `peserta1`, password `peserta123`. Peserta baru
 
 Halaman admin: http://localhost:3000/admin (password default lokal: `admin123`).
 Untuk mengganti password, salin `.env.example` menjadi `.env.local` lalu ubah `ADMIN_PASSWORD`, kemudian restart `npm run dev`.
+Di produksi (`NODE_ENV=production`) `ADMIN_PASSWORD` **wajib** diisi; tanpa itu login admin ditolak.
 
 Build produksi:
 
@@ -27,6 +28,16 @@ Build produksi:
 npm run build
 npm start
 ```
+
+## Produksi & keamanan
+
+- Set `ADMIN_PASSWORD` (kuat & unik) dan `DATABASE_URL` di environment server. Ganti/hapus akun contoh `peserta1`.
+- Gunakan HTTPS: cookie sesi otomatis `Secure` + `HttpOnly` + `SameSite=Lax` di produksi, dan header keamanan
+  (HSTS, `X-Frame-Options`, `nosniff`, dll.) diatur di `next.config.ts`.
+- Login admin & peserta dibatasi 8 percobaan per 10 menit per IP (`lib/rateLimit.ts`, in-memory — untuk
+  beberapa instance server pindahkan ke Redis/DB).
+- Pakai PostgreSQL (lihat bagian Database) untuk deployment online; SQLite hanya untuk lokal/satu server.
+- CI GitHub Actions (`.github/workflows/ci.yml`) menjalankan typecheck dan build di setiap push/PR.
 
 ## Fitur
 

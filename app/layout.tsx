@@ -2,8 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "eduTech CBT",
-  description: "Platform ujian CBT bahasa Jepang",
+  title: { default: "eduTech CBT", template: "%s · eduTech CBT" },
+  description: "Platform ujian CBT bahasa Jepang: latihan, simulasi ujian, dan laporan perkembangan peserta.",
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {

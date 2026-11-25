@@ -3,7 +3,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { ADMIN_COOKIE, checkPassword, requireAdmin, sessionToken } from "@/lib/auth";
+import { ADMIN_COOKIE, checkPassword, requireAdmin, sessionCookieOptions, sessionToken } from "@/lib/auth";
+import { allowAttempt, clearAttempts, TOO_MANY } from "@/lib/rateLimit";
 import * as db from "@/lib/db";
 import { validateQuestion, type QuestionDraft } from "@/lib/validate";
 
@@ -14,13 +15,10 @@ const str = (f: FormData, k: string) => String(f.get(k) ?? "");
 // ---------- Auth ----------
 
 export async function login(_: FormState, form: FormData): Promise<FormState> {
+  if (!(await allowAttempt("admin"))) return { errors: [TOO_MANY] };
   if (!checkPassword(str(form, "password"))) return { errors: ["Password salah"] };
-  (await cookies()).set(ADMIN_COOKIE, sessionToken(), {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 12,
-  });
+  await clearAttempts("admin");
+  (await cookies()).set(ADMIN_COOKIE, sessionToken(), sessionCookieOptions);
   redirect("/admin");
 }
 

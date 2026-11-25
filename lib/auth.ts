@@ -10,9 +10,24 @@ import { redirect } from "next/navigation";
  */
 export const ADMIN_COOKIE = "edutech_admin";
 
+const isProd = process.env.NODE_ENV === "production";
+
+/** Di produksi ADMIN_PASSWORD wajib diisi; password default hanya berlaku saat pengembangan lokal. */
 function adminPassword() {
-  return process.env.ADMIN_PASSWORD || "admin123";
+  const pw = process.env.ADMIN_PASSWORD;
+  if (pw) return pw;
+  if (isProd) throw new Error("ADMIN_PASSWORD belum diatur. Isi di environment sebelum menjalankan di produksi.");
+  return "admin123";
 }
+
+/** Opsi cookie sesi yang aman (Secure otomatis aktif di produksi). */
+export const sessionCookieOptions = {
+  httpOnly: true,
+  sameSite: "lax" as const,
+  secure: isProd,
+  path: "/",
+  maxAge: 60 * 60 * 12,
+};
 
 function tokenFor(password: string) {
   return createHash("sha256").update(`edutech-admin:${password}`).digest("hex");
